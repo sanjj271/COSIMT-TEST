@@ -973,7 +973,7 @@ static stellaris_board_info stellaris_boards[] = {
     BP_OLED_SSI | BP_GAMEPAD
   }
 };
-
+DeviceState *nvic;
 static void stellaris_init(MachineState *ms, stellaris_board_info *board)
 {
     static const int uart_irq[] = {5, 6, 33, 34};
@@ -1017,7 +1017,8 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
      * 400fe000 system control
      */
 
-    DeviceState *gpio_dev[7], *nvic;
+    DeviceState *gpio_dev[7], 
+    //*nvic;
     qemu_irq gpio_in[7][8];
     qemu_irq gpio_out[7][8];
     qemu_irq adc;
@@ -1306,6 +1307,7 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
 
     armv7m_load_kernel(ARM_CPU(first_cpu), ms->kernel_filename, flash_size);
 }
+
 // REMOTE PORT 
 static const MemMapEntry m3_memmap[] = {
     [M3_COSIM] =        {  0x40001000,    0x01000000 },
@@ -1315,7 +1317,7 @@ static void LM3S811EVB_create_remoteport(MachineState *machine,
                                    MemoryRegion *system_memory)
 {
     const MemMapEntry *memmap = m3_memmap;
-    //RISCVVirtState *s = RISCV_VIRT_MACHINE(machine);
+    ssys_state *s = STELLARIS_SYS(machine);
     SysBusDevice *sbd;
     DeviceClass *dc;
     Object *rp_obj;
@@ -1373,7 +1375,7 @@ static void LM3S811EVB_create_remoteport(MachineState *machine,
 
     /* Hook up IRQs.  */
     for (i = 0; i < 5; i++) {
-        qemu_irq irq = qdev_get_gpio_in(DEVICE(s->irqchip[0]), COSIM_IRQ + i);
+        qemu_irq irq = qdev_get_gpio_in(nvic, COSIM_IRQ + i);
         sysbus_connect_irq(SYS_BUS_DEVICE(rpirq_obj), i, irq);
     }
 };
@@ -1493,6 +1495,4 @@ static void stellaris_register_types(void)
 type_init(stellaris_register_types)
 
 //REMOTE PORT 
-
-
 
