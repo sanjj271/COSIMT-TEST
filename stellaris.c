@@ -1017,7 +1017,7 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
      * 400fe000 system control
      */
 
-    DeviceState *gpio_dev[7], 
+    DeviceState *gpio_dev[7];
     //*nvic;
     qemu_irq gpio_in[7][8];
     qemu_irq gpio_out[7][8];
