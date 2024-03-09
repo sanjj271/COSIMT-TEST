@@ -1,0 +1,164 @@
+// static volatile unsigned int * const UART_DR = (unsigned int *)0x4000c000;
+
+// static void uart_print(const char *s) {
+//     while (*s !='\0') {
+//          *UART_DR = (unsigned int)*s;
+//         s++;
+//      }
+// }
+// void c_entry(void) {
+// uart_print("Hello, World!\n");
+// while (1)
+// ;
+// }
+
+
+/***************************** Include Files *********************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+// #include "xparameters.h"
+// #include "xstatus.h"
+// #include "xil_io.h"
+// #include "xil_exception.h"
+// #include "xttcps.h"
+// #include "xil_printf.h"
+
+/************************** Definitions for local-counter (qCounter) ********************/
+// #define Q_COUNTER_DEVICE_ID			XPAR_XTTCPS_0_DEVICE_ID
+// #define	Q_COUNTER_OUTPUT_FREQ_HZ	50000000
+// //Since the input-clock is 100MHz (See XPAR_XTTCPS_0_TTC_CLK_FREQ_HZ), to get 50MHz we need the following settings
+// #define Q_COUNTER_INTERVAL			XTTCPS_MAX_INTERVAL_COUNT
+// #define Q_COUNTER_PRESCALER			0  						   //the register setting will be 2^(Q_COUNTER_PRESCALER + 1) or XTTCPS_CLK_CNTRL_PS_DISABLE
+// #define Q_COUNTER__OPTIONS     		(XTTCPS_OPTION_INTERVAL_MODE | XTTCPS_OPTION_WAVE_DISABLE)
+
+/************************** Definitions for remote-counter (sCounter) **************/
+#define S_COUNTER_REGISTER_CTRL  		  (0xFF4E0000)
+#define S_COUNTER_REGISTER_OUTPUT_FREQ    (0xFF4E0004)
+#define S_COUNTER_REGISTER_COUNT 		  (0xFF4E0008)
+#define S_COUNTER_CTRL_RESET     		  (0)
+#define S_COUNTER_CTRL_ENABLE             (1)
+#define S_COUNTER_OUTPUT_FREQ_HZ 	       50000000
+
+#define MAX_COUNT_VALUES	          (1100000)
+/************************** Variable Definitions *****************************/
+//static XTtcPs qCounter;
+//static uint32_t qCountValues[MAX_COUNT_VALUES];
+static uint32_t sCountValues[MAX_COUNT_VALUES];
+
+// static volatile unsigned int * const UART_DR = (unsigned int *)0x4000c000;
+
+// static void uart_print(const char *s) {
+//     while (*s !='\0') {
+//          *UART_DR = (unsigned int)*s;
+//         s++;
+//      }
+// }
+
+/***************** Macros (Inline Functions) Definitions *********************/
+static inline void SetUpSCounter(void)
+{
+	volatile uint32_t * outputFreqReg = (volatile uint32_t*)(S_COUNTER_REGISTER_OUTPUT_FREQ);
+	*(outputFreqReg) = S_COUNTER_OUTPUT_FREQ_HZ;
+}
+static inline void  StartSCounter(void)
+{
+	volatile uint32_t * ctrlReg = (volatile uint32_t*)(S_COUNTER_REGISTER_CTRL);
+	*(ctrlReg) = S_COUNTER_CTRL_ENABLE;
+}
+static inline void ResetSCounter(void)
+{
+	volatile uint32_t * ctrlReg = (volatile uint32_t*)(S_COUNTER_REGISTER_CTRL);
+	*(ctrlReg) = S_COUNTER_CTRL_ENABLE;
+}
+static inline uint32_t GetSCounterValue(void)
+{
+	return *(volatile uint32_t *) S_COUNTER_REGISTER_COUNT;
+}
+
+/************************** Function Prototypes ******************************/
+// static int SetUpQCounter(void);
+// static void StartQCounter(void);
+// static void StopQCounter(void);
+static int MainTest(void);
+
+/*********************************** MAIN *************************************/
+int main(void)
+{
+	int status = MainTest();
+	return status;
+}
+/*****************************************************************************/
+
+// static int SetUpQCounter(void)
+// {
+// 	int status;
+
+// 	//Get initial configuration
+// 	XTtcPs_Config * Config = XTtcPs_LookupConfig(Q_COUNTER_DEVICE_ID);
+// 	if (NULL == Config) {
+// 		return XST_FAILURE;
+// 	}
+// 	//Apply initial configuration
+// 	status = XTtcPs_CfgInitialize(&qCounter, Config, Config->BaseAddress);
+// 	if (status != XST_SUCCESS)
+// 	{
+// 		return XST_FAILURE;
+// 	}
+
+// 	//Apply additional settings
+// 	status = XTtcPs_SetOptions(&qCounter, Q_COUNTER__OPTIONS);
+// 	if (status != XST_SUCCESS)
+// 	{
+// 		return XST_FAILURE;
+// 	}
+// 	//XTtcPs_CalcIntervalFromFreq(&qCounter, s->OutputHz, &s->Interval, &s->Prescaler);
+// 	XTtcPs_SetInterval(&qCounter, Q_COUNTER_INTERVAL);
+// 	XTtcPs_SetPrescaler(&qCounter, Q_COUNTER_PRESCALER);
+
+// 	return status;
+// }
+
+// static void StartQCounter(void)
+// {
+// 	XTtcPs_Start(&qCounter);
+// }
+
+// static void StopQCounter(void)
+// {
+// 	XTtcPs_Stop(&qCounter);
+// }
+
+static int MainTest(void)
+{
+	int status;
+
+	SetUpSCounter();
+	// status = SetUpQCounter();
+	// if (status != XST_SUCCESS)
+	// {
+	// 	return status;
+	// }
+
+	StartSCounter();
+	//StartQCounter();
+
+	//xil_printf("Reading counter's value (using freq = %lld Hz) \r\n", Q_COUNTER_OUTPUT_FREQ_HZ);
+
+	uint32_t i = 0;
+	while (i < MAX_COUNT_VALUES)
+	{
+		//qCountValues[i] = XTtcPs_GetCounterValue(&qCounter);
+		sCountValues[i] = GetSCounterValue();
+		//xil_printf("Local counter = %lld - ", qCountValues[i-1]);
+		//uart_print("Remote Counter: %lld \n\r", sCountValues[i-1]);
+
+		i++;
+	}
+
+	// StopQCounter();
+	ResetSCounter();
+
+	return 0;
+}
